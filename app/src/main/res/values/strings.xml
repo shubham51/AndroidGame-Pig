@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Pig</string>
+    <string name="score_1">Player 1 score:</string>
+    <string name="score_2">Player 2 score:</string>
+    <string name="hold">HOLD</string>
+    <string name="roll">ROLL!</string>
+    <string name="player_1">Player 1 turn</string>
+    <string name="player_2">Player 2 turn</string>
+    <string name="alert_1">You rolled a 1! Your turn is over. Pass the phone over to the other player</string>
+    <string name="alert_2">Your score is saved! Pass the phone over to the other player</string>
+
+</resources>
