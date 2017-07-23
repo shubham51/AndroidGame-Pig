@@ -1,5 +1,5 @@
 package com.example.shubham.pig;
-
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.res.Resources;
@@ -27,9 +27,7 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.util.Random;
 import java.util.Timer;
-
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
-    //private final int rollAnimations = 50;
     private final int delayTime = 15;
     private  Resources res;
     private  ImageView die;
@@ -37,17 +35,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private  Button Button_hold;
     private  TextView Score_p1;
     private  TextView Score_p2;
-   // private final int[] diceImages = new int[] { R.drawable.one, R.drawable.two, R.drawable.three, R.drawable.four, R.drawable.five, R.drawable.six };
-   // private Drawable dice[] = new Drawable[6];
     private final Random randomGen = new Random();
     private SensorManager sensorMgr;
+    private Sensor mSensor;
     private Handler animationHandler;
     private long lastUpdate = -1;
     private float x, y, z;
-   // private float last_x=0, last_y=0, last_z=0;
     private boolean paused=false;
     private static final int UPDATE_DELAY = 250;
-    private static final int SHAKE_THRESHOLD = 3;
+    private static final int SHAKE_THRESHOLD = 10;
     private static int chance=1;
     private static int score_p1=0;
     private static int score_p2=0;
@@ -67,7 +63,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             initialize();
             Button_roll.setVisibility(View.VISIBLE);
             Button_hold.setVisibility(View.VISIBLE);
-
         }
         return true;
     }
@@ -81,11 +76,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         prevscore_p2=0;
         Score_p1.setText("0");  Score_p2.setText("0");
         die.setImageResource(R.drawable.dice3droll);
-        getSupportActionBar().setTitle(R.string.player_1);
-
-        boolean accelSupported = sensorMgr.registerListener(this,
-                sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_GAME);
-        if (!accelSupported) sensorMgr.unregisterListener(this);
+        getSupportActionBar().setTitle("Player 1 turn");
+        sensorMgr.registerListener(this,mSensor,SensorManager.SENSOR_DELAY_GAME);
     }
 
     @Override
@@ -93,13 +85,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         res = getResources();
-        getSupportActionBar().setTitle(R.string.player_1);
+        getSupportActionBar().setTitle("Player 1 turn");
         Button_roll=(Button)findViewById(R.id.button_roll);
         Button_hold=(Button)findViewById(R.id.button_hold);
         Score_p1=(TextView)findViewById(R.id.textViewScore1);
         Score_p2=(TextView)findViewById(R.id.textViewScore2);
         Score_p1.setText("0");  Score_p2.setText("0");
-      //  initialize();
         Button_roll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -108,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 } catch (Exception e) {};
             }
         });
-
         Button_hold.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -121,13 +111,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         }
                     }).show();
                     if(chance==1) {
-
                         prevscore_p1=score_p1; chance=2;
                         getSupportActionBar().setTitle(R.string.player_2);
                     }
                     else if(chance==2){
                         prevscore_p2=score_p2; chance=1;
-                        //getActionBar().setTitle(R.string.player_1);
                         getSupportActionBar().setTitle(R.string.player_1);
                     }
                 } catch (Exception e) {};
@@ -203,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     score_p1=prevscore_p1;
                     Score_p1.setText(Integer.toString(score_p1));
                     chance=2;
-                   getSupportActionBar().setTitle(R.string.player_2);
+                   getSupportActionBar().setTitle("Player 2 turn");
                 }
                 else if(value==1 && chance==2) {
                     new AlertDialog.Builder(MainActivity.this).
@@ -219,16 +207,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                    getSupportActionBar().setTitle(R.string.player_1);
                 }
                 paused=false;	//user can press again
-
             }
             };
         sensorMgr = (SensorManager) getSystemService(SENSOR_SERVICE);
-        boolean accelSupported = sensorMgr.registerListener(this,
-                sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),SensorManager.SENSOR_DELAY_GAME);
-        if (!accelSupported) sensorMgr.unregisterListener(this);
-        //rollDice();
+        mSensor = sensorMgr.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
     }
-
     private void rollDice() {
         if (paused) return;
         new Thread(new Runnable() {
@@ -258,10 +241,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             e.printStackTrace();
         }
     }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
         Sensor mySensor = event.sensor;
-        if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        if (mySensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
             long curTime = System.currentTimeMillis();
             if ((curTime - lastUpdate) > UPDATE_DELAY) {
                 long diffTime = (curTime - lastUpdate);
@@ -269,13 +253,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 x = event.values[0];
                 y = event.values[1];
                 z = event.values[2];
-                float acceleration = (float) Math.sqrt(x*x + y*y + z*z) - SensorManager.GRAVITY_EARTH;
-                //  float speed = (Math.abs(x + y + z - last_x - last_y - last_z) / diffTime) * 1000;
+                float acceleration = (float) Math.sqrt(x*x + y*y + z*z);
                 if (acceleration > SHAKE_THRESHOLD) { //the screen was shaked
                     rollDice();
                 }
             }
-
         }
     }
 
@@ -283,13 +265,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
         return; //this method isn't used
     }
-    public void onResume() {
+
+    @Override
+    protected void onResume() {
         super.onResume();
+        sensorMgr.registerListener(this,mSensor,SensorManager.SENSOR_DELAY_GAME);
         paused = false;
     }
-
+    @Override
     public void onPause() {
         super.onPause();
+        sensorMgr.unregisterListener(this,mSensor);
         paused = true;
     }
 
